@@ -1,0 +1,32 @@
+name: Daily economic data collection
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. 22:30 UTC = 07:30 KST.
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Collect latest observations
+        run: python collect_daily.py
+      - name: Commit updated history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/economic_history.csv
+          git diff --cached --quiet || git commit -m "Update daily economic data"
+          git push
